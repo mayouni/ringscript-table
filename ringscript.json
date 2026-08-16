@@ -1,0 +1,38 @@
+{
+  "name": "table",
+  "version": "1.0.0",
+  "ringscript": ">=0.9",
+  "summary": "Rows on the device: filter, sort, page, aggregate and group - with the index that keeps a sorted read from going quadratic.",
+  "ring": [
+    "ring/table.ring"
+  ],
+  "web": [
+    "web/table.js"
+  ],
+  "css": [],
+  "sw": "",
+  "assets": [],
+  "provides": [
+    "TableIndex",
+    "TableTouch",
+    "TableIndexFloor",
+    "TableLoad",
+    "TableColumns",
+    "TableCount",
+    "TableViewCount",
+    "TableColumnOf",
+    "TableFilter",
+    "TableTest",
+    "TableAll",
+    "TableSort",
+    "TablePage",
+    "TableRow",
+    "TableAggregate",
+    "TableGroup",
+    "TableAppend",
+    "TableSet",
+    "TableSnapshot",
+    "TableRestore"
+  ],
+  "global": "Table"
+}
