@@ -108,6 +108,21 @@ const ok = (n, c, d) => {
     ok("set out of range is refused",
        P(vm, "TableSet", JSON.stringify([["at",99],["column","amount"],["value",1]])).ok === 0);
 
+    // where: total a subset without disturbing the view
+    P(vm, "TableAll", 0);
+    P(vm, "TableSet", JSON.stringify([["at",1],["column","amount"],["value",-50]]));
+    let w = P(vm, "TableAggregate", JSON.stringify([["column","amount"],
+        ["where",[[["column","amount"],["op","gt"],["value",0]]]]]));
+    ok("where excludes rows and counts them as skipped",
+       w.skipped === 1 && w.min > 0, w);
+    let noW = P(vm, "TableAggregate", JSON.stringify([["column","amount"]]));
+    ok("without where, the same rows are included",
+       noW.count === w.count + 1 && noW.sum === w.sum - 50, {noW, w});
+    ok("the view is unchanged by where", P(vm, "TableViewCount", 0) === 6);
+    ok("an unknown where column is refused",
+       P(vm, "TableAggregate", JSON.stringify([["column","amount"],
+         ["where",[[["column","nope"],["op","gt"],["value",0]]]]])).ok === 0);
+
     // the index: correctness must not depend on it
     const vmA = await mk(); load(vmA);
     const vmB = await mk(); P(vmB, "TableIndexFloor", 1e9); load(vmB);
@@ -125,9 +140,12 @@ const ok = (n, c, d) => {
     const snap = vm.call("TableSnapshot", 0).result;
     const vm2 = await mk();
     ok("restore returns the row count", P(vm2, "TableRestore", snap) === 6);
-    ok("restored data is intact",
-       P(vm2, "TableAggregate", JSON.stringify([["column","amount"]])).sum === 3005, 
-       P(vm2, "TableAggregate", JSON.stringify([["column","amount"]])));
+    // compare against the source table rather than a number that drifts
+    // whenever a test above changes a cell
+    const beforeSnap = P(vm, "TableAggregate", JSON.stringify([["column","amount"]]));
+    const afterSnap = P(vm2, "TableAggregate", JSON.stringify([["column","amount"]]));
+    ok("restored data is identical to what was snapshotted",
+       JSON.stringify(beforeSnap) === JSON.stringify(afterSnap), {beforeSnap, afterSnap});
     ok("restore of nothing is harmless", P(vm2, "TableRestore", "") === 0);
 
     console.log(bad ? "\n" + bad + " FAILED" : "\nAll table.ring checks passed.");

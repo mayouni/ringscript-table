@@ -34,7 +34,7 @@
     }
 
     global.Table = {
-        version: "1.0.0",
+        version: "1.1.0",
 
         attach: async function (ring) {
             var src = await (await fetch(BASE + "table.ring")).text();
@@ -76,8 +76,13 @@
 
                 /* Over the current view, so it answers "what am I looking
                    at" rather than "what is in the table". */
-                aggregate: function (column) {
-                    return ask("TableAggregate", JSON.stringify([["column", column]]));
+                /* where is optional: totals a subset WITHOUT disturbing
+                   the view, so "the sum of what counts, and how many did
+                   not" costs one pass rather than three. */
+                aggregate: function (column, where) {
+                    var spec = [["column", column]];
+                    if (where) { spec.push(["where", where.map(pairs)]); }
+                    return ask("TableAggregate", JSON.stringify(spec));
                 },
                 group: function (by, value, top) {
                     return ask("TableGroup", JSON.stringify([["by", by], ["value", value || ""], ["top", top || 10]]));

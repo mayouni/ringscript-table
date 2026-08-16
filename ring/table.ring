@@ -280,25 +280,62 @@ func TableRow nAt
 
 # ======================================================== 6. aggregating
 # cJson: [ :column = "amount" ]
+#    or: [ :column = "amount", :where = [ [ :column = "amount",
+#                                           :op = "gt", :value = 0 ] ] ]
 #
 # Over the CURRENT view, so it answers "what am I looking at" rather than
 # "what is in the table". Non-numeric cells are counted and skipped, never
 # silently treated as zero.
+#
+# `where` totals a subset WITHOUT disturbing the view. Added in 1.1 because
+# a register needed "the sum of the deposits that count, and how many did
+# not" — and doing that by filtering twice and filtering back turns one
+# pass into three, on a table where one pass is the budget.
 func TableAggregate cJson
 	aIn = JsonDecode(cJson)
 	cCol = ""
+	aWhere = []
 	for i = 1 to len(aIn)
 		if aIn[i][1] = "column"  cCol = "" + aIn[i][2]  ok
+		if aIn[i][1] = "where"   aWhere = aIn[i][2]     ok
 	next
 	nC = TableColumnOf(cCol)
 	if nC = 0
 		return JsonEncode([ :ok = 0, :problem = "no column called " + cCol ])
 	ok
 
+	# resolve the tests once, not per row
+	aTests = []
+	for i = 1 to len(aWhere)
+		cWCol = ""  cWOp = "eq"  pWVal = ""
+		for j = 1 to len(aWhere[i])
+			if aWhere[i][j][1] = "column"  cWCol = "" + aWhere[i][j][2]  ok
+			if aWhere[i][j][1] = "op"      cWOp = "" + aWhere[i][j][2]   ok
+			if aWhere[i][j][1] = "value"   pWVal = aWhere[i][j][2]       ok
+		next
+		nWC = TableColumnOf(cWCol)
+		if nWC = 0
+			return JsonEncode([ :ok = 0, :problem = "no column called " + cWCol ])
+		ok
+		aTests + [nWC, cWOp, pWVal]
+	next
+
 	TableIndex(1)
 	nSum = 0  nMin = 0  nMax = 0  nGood = 0  nBad = 0
 	for k = 1 to nTableView
-		v = aTableData[nC][aTableView[k]]
+		nRow = aTableView[k]
+		lPass = 1
+		for t = 1 to len(aTests)
+			if TableTest(aTableData[aTests[t][1]][nRow], aTests[t][2], aTests[t][3]) = 0
+				lPass = 0
+				exit
+			ok
+		next
+		if lPass = 0
+			nBad = nBad + 1
+			loop
+		ok
+		v = aTableData[nC][nRow]
 		if not isnumber(v)
 			nBad = nBad + 1
 			loop
