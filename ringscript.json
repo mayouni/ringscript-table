@@ -1,6 +1,6 @@
 {
   "name": "table",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "ringscript": ">=0.9",
   "summary": "Rows on the device: filter, sort, page, aggregate and group - with the index that keeps a sorted read from going quadratic.",
   "ring": [
@@ -16,6 +16,7 @@
     "TableIndex",
     "TableTouch",
     "TableIndexFloor",
+    "TableSetData",
     "TableLoad",
     "TableColumns",
     "TableCount",
@@ -32,7 +33,8 @@
     "TableAppend",
     "TableSet",
     "TableSnapshot",
-    "TableRestore"
+    "TableRestore",
+    "TableOpCode"
   ],
   "global": "Table"
 }
